@@ -50,8 +50,6 @@ class SyncUserController extends Controller
     {
         $em = $this->getDoctrine()->getManager();
 
-        $entities = $em->getRepository('AmulenUserBundle:User')->findAll();
-
         $settingUrl = $em->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
             'name' => Setting::FLOWR_URL
         ));
@@ -70,61 +68,13 @@ class SyncUserController extends Controller
             return $this->redirect($this->generateUrl('admin_flowr_sync_user'));
         }
 
-        $url = "http://demo.flower_local.com:8000/api/clients/accounts/contact_type";
-        $token = null;
+        /* launch process */
+        $rootDir = $this->get('kernel')->getRootDir();
+        $env = $this->container->get('kernel')->getEnvironment();
+        $commandCall = "php " . $rootDir . "/console amulen:flowr:syncusers --env=" . $env . " > /dev/null &";
+        exec($commandCall);
 
-        $client = new Client([
-            'base_uri' => $settingUrl->getValue(),
-            'timeout' => 10.0,
-        ]);
-
-        /* login */
-        $resLogin = $client->request('POST', "/api/users/login", array(
-            'content_type' => "application/x-www-form-urlencoded",
-            'form_params' => array(
-                'username' => $settingUsername->getValue(),
-                'password' => $settingPassword->getValue(),
-            ),
-        ));
-        $codeLogin = $resLogin->getStatusCode();
-        if ($codeLogin == 200) {
-            $body = $resLogin->getBody();
-            $responseArr = json_decode($body, true);
-            $token = $responseArr['token'];
-        }
-
-        if ($token) {
-
-            /* @var $user User */
-            foreach ($entities as $user) {
-
-                $user->setFlowrSynced(false);
-                $res = $client->request('POST', "/api/clients/accounts/contact_type", array(
-                    'content_type' => "application/x-www-form-urlencoded",
-                    'headers' => array(
-                        'Authorization' => "Bearer $token",
-                    ),
-                    'form_params' => array(
-                        'firstname' => $user->getFirstname(),
-                        'lastname' => $user->getLastname(),
-                        'email' => $user->getEmail(),
-                    ),
-                ));
-
-                $code = $res->getStatusCode();
-                if ($code == 200) {
-                    $body = $res->getBody();
-                    $responseArr = json_decode($body, true);
-                    $flowrUser = $responseArr['entity'];
-
-                    $user->setFlowrSynced(true);
-                    $user->setFlowrId($flowrUser['id']);
-                }
-
-                $em->flush();
-            }
-        }
-        $this->addFlash('success', 'Sync OK.');
+        $this->addFlash('success', 'Syncronization started ok.');
 
         return $this->redirect($this->generateUrl('admin_flowr_sync_user'));
     }

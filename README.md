@@ -46,6 +46,14 @@ Add fields to the user models:
    * @ORM\Column(name="flowr_synced", type="boolean")
    */
   protected $flowrSynced;
+  
+  
+  public function __construct()
+  {
+      parent::__construct();
+      $this->flowrSynced = false;
+  }
+  
       
 ```
 
