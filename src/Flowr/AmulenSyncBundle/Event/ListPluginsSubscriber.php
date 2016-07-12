@@ -38,15 +38,15 @@ class ListPluginsSubscriber implements EventSubscriberInterface
         $plugins[] = array(
             "name" => "FlowrAmulenSync",
             "image" => null,
-            "version" => "v1.0",
+            "version" => "0.1.0",
             "settings" => $this->router->generate('admin_flowrsync_setting'),
-            "description" => $this->translator->trans('flowr_amulensync.description'),
+            "description" => $this->translator->trans('flowr_amulensync.description', array(), 'FlowrAmulenSync'),
             "website" => null,
             "authors" => array(
                 array(
-                    "name" => "Flowcode",
-                    "email" => "info@flowcode.com.ar",
-                    "website" => "http://flowcode.com.ar",
+                    "name" => "Flowr",
+                    "email" => "hi@myflowr.com",
+                    "website" => "http://myflowr.com",
                 ),
             ),
         );
