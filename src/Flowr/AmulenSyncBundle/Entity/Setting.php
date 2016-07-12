@@ -16,6 +16,9 @@ class Setting
     const FLOWR_URL = "flowr_url";
     const FLOWR_USERNAME = "flowr_username";
     const FLOWR_PASSWORD = "flowr_password";
+    const FLOWR_CONTACT_SOURCE = "flowr_contact_source";
+    const FLOWR_FIELDS = "flowr_fields";
+    const SERVICE_TIMEOUT = "service_timeout";
 
     /**
      * @var integer

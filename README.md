@@ -47,11 +47,19 @@ Add fields to the user models:
    */
   protected $flowrSynced;
   
+  /**
+   * @var boolean
+   *
+   * @ORM\Column(name="flowr_sync_enabled", type="boolean")
+   */
+  protected $flowrSyncEnabled;
+  
   
   public function __construct()
   {
       parent::__construct();
       $this->flowrSynced = false;
+      $this->flowrSyncEnabled = false;
   }
   
       
@@ -59,4 +67,11 @@ Add fields to the user models:
 
 Don`t forget to add getters and setters.
 
+Then setup your Flowr settings in the admin section:
+* flowr_url (required): http://demo2.myflowr.com
+* flowr_username (required):	jaguero
+* flowr_password (required):	123456
+* flowr_contact_source (prefered but optional):	Test Kaka Hanga
+* flowr_fields:	firstname,lastname,email
+* service_timeout:	10.0
 

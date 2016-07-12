@@ -21,6 +21,7 @@
                         <th>{{ 'FlowrId'|trans({}, 'FlowrAmulenSync') }}</th>
                         <th>{{ 'FlowrCode'|trans({}, 'FlowrAmulenSync') }}</th>
                         <th>{{ 'Synced'|trans({}, 'FlowrAmulenSync') }}</th>
+                        <th>{{ 'FlowrSyncEnabled'|trans({}, 'FlowrAmulenSync') }}</th>
                         <th>{{ 'Username'|trans }}</th>
                         <th>{{ 'Firstname'|trans }}</th>
                         <th>{{ 'Lastname'|trans }}</th>
@@ -31,11 +32,18 @@
                     <tbody>
                     {% for entity in entities %}
                         <tr>
-                            <td><a href="{{ path('admin_user_show', { 'id': entity.id }) }}">{{ entity.id }}</a>
+                            <td><a href="{{ path('admin_flowr_sync_user_show', { 'id': entity.id }) }}">{{ entity.id }}</a>
                             <td>{{ entity.flowrId }}</td>
                             <td>{{ entity.flowrCode }}</td>
                             <td>
                                 {% if entity.flowrSynced %}
+                                    {{ 'yes'|trans }}
+                                {% else %}
+                                    {{ 'no'|trans }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if entity.flowrSyncEnabled %}
                                     {{ 'yes'|trans }}
                                 {% else %}
                                     {{ 'no'|trans }}

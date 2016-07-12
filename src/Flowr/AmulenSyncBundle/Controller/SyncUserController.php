@@ -3,6 +3,7 @@
 namespace Flowr\AmulenSyncBundle\Controller;
 
 use Flowr\AmulenSyncBundle\Entity\Setting;
+use Flowr\AmulenSyncBundle\Form\Type\UserType;
 use GuzzleHttp\Client;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -10,8 +11,6 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Amulen\UserBundle\Entity\User;
-use Flowcode\UserBundle\Form\UserType;
-use Flowcode\UserBundle\Form\UserEditType;
 
 /**
  * User controller.
@@ -97,11 +96,77 @@ class SyncUserController extends Controller
             throw $this->createNotFoundException('Unable to find User entity.');
         }
 
-        $deleteForm = $this->createDeleteForm($id);
+        return array(
+            'entity' => $entity,
+        );
+    }
+
+    /**
+     * Finds and displays a User entity.
+     *
+     * @Route("/{id}/edit", name="admin_flowr_sync_user_edit")
+     * @Method("GET")
+     * @Template()
+     */
+    public function editAction($id)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $entity = $em->getRepository('AmulenUserBundle:User')->find($id);
+
+        if (!$entity) {
+            throw $this->createNotFoundException('Unable to find User entity.');
+        }
+
+        $form = $this->createForm(new UserType(), $entity, array(
+            'action' => $this->generateUrl('admin_flowr_sync_user_update', array('id' => $entity->getId())),
+            'method' => 'PUT',
+        ));
+        $form->add('submit', 'submit', array('label' => 'Update'));
 
         return array(
             'entity' => $entity,
-            'delete_form' => $deleteForm->createView(),
+            'form' => $form->createView(),
+        );
+    }
+
+    /**
+     * Edits an existing User entity.
+     *
+     * @Route("/{id}", name="admin_flowr_sync_user_update")
+     * @Method("PUT")
+     * @Template("FlowcodeUserBundle:User:edit.html.twig")
+     */
+    public function updateAction(Request $request, $id)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $entity = $em->getRepository('AmulenUserBundle:User')->find($id);
+
+        if (!$entity) {
+            throw $this->createNotFoundException('Unable to find User entity.');
+        }
+
+        $form = $this->createForm(new UserType(), $entity, array(
+            'action' => $this->generateUrl('admin_flowr_sync_user_update', array('id' => $entity->getId())),
+            'method' => 'PUT',
+        ));
+        $form->add('submit', 'submit', array('label' => 'Update'));
+
+        $form->handleRequest($request);
+
+        if ($form->isValid()) {
+
+            /* get user manager */
+            $userManager = $this->container->get('flowcode.user');
+            $userManager->update($entity);
+
+            return $this->redirect($this->generateUrl('admin_flowr_sync_user_show', array('id' => $id)));
+        }
+
+        return array(
+            'entity' => $entity,
+            'form' => $form->createView(),
         );
     }
 

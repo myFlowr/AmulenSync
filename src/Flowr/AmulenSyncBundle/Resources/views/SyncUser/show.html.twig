@@ -1,0 +1,71 @@
+{% extends 'FlowcodeDashboardBundle:Default:layout.html.twig' %}
+
+{% block body -%}
+{{ include('FlowcodeUserBundle:AdminUser:usersHeader.html.twig') }}
+
+<section class="content">
+
+    <div class="box box-solid">
+        <div class="box-header">
+            <div class="box-tools">
+                <a class="btn btn-link btn-sm" href="{{ path('admin_flowr_sync_user') }}">
+                    {{ "Back to the list"|trans }}
+                </a>
+                <a class="btn btn-link btn-sm" href="{{ path('admin_flowr_sync_user_edit', { 'id': entity.id }) }}">
+                    {{ "edit"|trans }}
+                </a>
+            </div>
+        </div>
+        <div class="box-body">
+            <table class="table table-condensed">
+                <tbody>
+                    <tr>
+                        <th>{{ "firstname"|trans }}</th>
+                        <td>{{ entity.firstname }}</td>
+                    </tr>
+                    <tr>
+                        <th>{{ "Email"|trans }}</th>
+                        <td>{{ entity.email }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>{{ "Username"|trans }}</th>
+                        <td>{{ entity.username }}</td>
+                    </tr>
+                    <tr>
+                        <th>{{ "status"|trans }}</th>
+                        <td>
+                            {% if entity.status %}
+                            {{ "active"|trans }}
+                            {% else %}
+                            {{ "inactive"|trans }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{{ "flowrSyncEnabled"|trans }}</th>
+                        <td>
+                            {% if entity.flowrSyncEnabled %}
+                                {{ "yes"|trans }}
+                            {% else %}
+                                {{ "no"|trans }}
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>{{ "Created"|trans }}</th>
+                        <td>{{ entity.created|date('Y-m-d H:i:s') }}</td>
+                    </tr>
+                    <tr>
+                        <th>{{ "Updated"|trans }}</th>
+                        <td>{{ entity.updated|date('Y-m-d H:i:s') }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</section>
+
+{% endblock %}

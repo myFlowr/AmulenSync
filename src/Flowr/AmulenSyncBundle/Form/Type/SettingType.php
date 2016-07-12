@@ -21,6 +21,9 @@ class SettingType extends AbstractType
                     Setting::FLOWR_URL => "Flowr Url",
                     Setting::FLOWR_USERNAME => "Flowr Username",
                     Setting::FLOWR_PASSWORD => "Flowr Password",
+                    Setting::FLOWR_CONTACT_SOURCE => "Contact Source",
+                    Setting::FLOWR_FIELDS => "Users fields",
+                    Setting::SERVICE_TIMEOUT => "Service Timeout",
                 )
             ))
             ->add('value');
@@ -33,7 +36,7 @@ class SettingType extends AbstractType
     {
         $resolver->setDefaults(array(
             'data_class' => 'Flowr\AmulenSyncBundle\Entity\Setting',
-            'translation_domain' => 'Setting',
+            'translation_domain' => 'FlowrAmulenSync',
         ));
     }
 

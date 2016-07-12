@@ -18,6 +18,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 class SyncUsersCommand extends ContainerAwareCommand
 {
 
+    const FLOWR_URL_LOGIN = "/api/users/login";
+    const FLOWR_URL_ACCOUNT_CREATE = "/api/clients/accounts/contact_type";
+    const FLOWR_ACCOUNT_ALREADY_CREATED = "Account already synced";
+
     private $entityManager;
 
     protected function configure()
@@ -48,15 +52,24 @@ class SyncUsersCommand extends ContainerAwareCommand
         $settingPassword = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
             'name' => Setting::FLOWR_PASSWORD
         ));
+        $settingContactSource = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
+            'name' => Setting::FLOWR_CONTACT_SOURCE
+        ));
+        $settingTimeOut = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
+            'name' => Setting::SERVICE_TIMEOUT
+        ));
+
         $client = new Client([
             'base_uri' => $settingUrl->getValue(),
-            'timeout' => 10.0,
+            'timeout' => $settingTimeOut ? $settingTimeOut->getValue() : "10.0",
         ]);
 
-        $entities = $this->getEM()->getRepository('AmulenUserBundle:User')->findAll();
+        $entities = $this->getEM()->getRepository('AmulenUserBundle:User')->findBy(array(
+            'flowrSyncEnabled' => true
+        ));
 
         /* login */
-        $resLogin = $client->request('POST', "/api/users/login", array(
+        $resLogin = $client->request('POST', self::FLOWR_URL_LOGIN, array(
             'content_type' => "application/x-www-form-urlencoded",
             'form_params' => array(
                 'username' => $settingUsername->getValue(),
@@ -76,7 +89,7 @@ class SyncUsersCommand extends ContainerAwareCommand
             foreach ($entities as $user) {
 
                 $user->setFlowrSynced(false);
-                $res = $client->request('POST', "/api/clients/accounts/contact_type", array(
+                $res = $client->request('POST', self::FLOWR_URL_ACCOUNT_CREATE, array(
                     'content_type' => "application/x-www-form-urlencoded",
                     'headers' => array(
                         'Authorization' => "Bearer $token",
@@ -85,6 +98,7 @@ class SyncUsersCommand extends ContainerAwareCommand
                         'firstname' => $user->getFirstname(),
                         'lastname' => $user->getLastname(),
                         'email' => $user->getEmail(),
+                        'contact_source' => $settingContactSource ? $settingContactSource->getValue() : "Amulen Web",
                     ),
                 ));
 
@@ -96,6 +110,18 @@ class SyncUsersCommand extends ContainerAwareCommand
 
                     $user->setFlowrSynced(true);
                     $user->setFlowrId($flowrUser['id']);
+                    if ($responseArr['message'] == self::FLOWR_ACCOUNT_ALREADY_CREATED) {
+                        $output->writeln("Account already exists.");
+                        if (isset($flowrUser['firstname'])) {
+                            $user->setFirstname($flowrUser['firstname']);
+                        }
+                        if (isset($flowrUser['lastname'])) {
+                            $user->setLastname($flowrUser['lastname']);
+                        }
+                        if (isset($flowrUser['code'])) {
+                            $user->setFlowrCode($flowrUser['code']);
+                        }
+                    }
                 }
 
                 $this->getEM()->flush();
