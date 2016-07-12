@@ -1,0 +1,40 @@
+{% extends "FlowcodeDashboardBundle:Default:layout.html.twig" %}
+
+{% block title %}{{ '%entity% list'|trans({'%entity%': 'Setting'}, 'Setting') }} - {{ parent() }}{% endblock %}
+{% block body %}
+    <section class="content-header">
+        <h1>
+            {{ '%entity% list'|trans({'%entity%': 'Setting'}, 'Setting') }}
+        </h1>
+    </section>
+    <section class="content">    
+        <div class="box">
+            <div class="box-header">
+                <div class="box-tools pull-right">                    <a class="btn btn-link btn-sm" href={{ path('admin_flowrsync_setting_new') }}>
+                        <i class="fa fa-plus"></i> {{ 'Create a new %entity%'|trans({'%entity%': 'Setting'}, 'Setting') }}
+                    </a>
+                            </div>
+            </div>
+            <div class="box-body">    
+            <table class="table table-hover records_list table-condensed">
+                <thead>
+                    <tr>                        <th scope="col">Name</th>                        <th scope="col">Value</th>                    </tr>
+                </thead>
+                <tbody>
+                    {% for setting in entities %}
+                        <tr>
+                                                             
+                                <td><a href="{{ path('admin_flowrsync_setting_show', {id: setting.id}) }}">{{ setting.name }}</a></td>
+                                <td>{{ setting.value }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        <div class="box-footer">
+
+        </div>
+        
+    </section>        
+
+{% endblock %}

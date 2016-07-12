@@ -1,0 +1,17 @@
+{
+  "name": "flowr/amulen-sync",
+  "description": "Amulen plugin for syncronize data with Flowr.",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Juan Manuel Aguero",
+      "email": "juanma.aguero@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-0": {
+      "": "src/"
+    }
+  },
+  "require": {}
+}
