@@ -24,6 +24,8 @@ class SettingType extends AbstractType
                     Setting::FLOWR_CONTACT_SOURCE => "Contact Source",
                     Setting::FLOWR_FIELDS => "Users fields",
                     Setting::SERVICE_TIMEOUT => "Service Timeout",
+                    Setting::FLOWR_SALES_SALE_CATEGORY => "Sale category",
+                    Setting::FLOWR_SALES_SALE_POINT => "Sale point",
                 )
             ))
             ->add('value');

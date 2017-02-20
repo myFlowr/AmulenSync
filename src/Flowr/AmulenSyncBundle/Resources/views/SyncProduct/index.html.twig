@@ -1,0 +1,61 @@
+{% extends 'FlowcodeDashboardBundle:Default:layout.html.twig' %}
+
+{% block body -%}
+
+    <section class="content">
+        <div class="box box-solid">
+            <div class="box-header">
+                <h3>{{ "Products list"|trans({}, 'FlowrAmulenSync')|title }}</h3>
+                <div class="box-tools">
+                    <a class="btn btn-warning btn-lg" href="{{ path('admin_flowr_sync_product_do_sync') }}">
+                        <i class="fa fa-refresh"></i> {{ 'sync'|trans({}, 'FlowrAmulenSync') }}
+                    </a>
+                </div>
+            </div>
+            <div class="box-body">
+
+                <table class="records_list table table-condensed">
+                    <thead>
+                    <tr>
+                        <th>{{ 'Id'|trans }}</th>
+                        <th>{{ 'FlowrId'|trans({}, 'FlowrAmulenSync') }}</th>
+                        <th>{{ 'FlowrCode'|trans({}, 'FlowrAmulenSync') }}</th>
+                        <th>{{ 'Synced'|trans({}, 'FlowrAmulenSync') }}</th>
+                        <th>{{ 'FlowrSyncEnabled'|trans({}, 'FlowrAmulenSync') }}</th>
+                        <th>{{ 'Name'|trans }}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for entity in entities %}
+                        <tr>
+                            <td>
+                                <a href="{{ path('admin_flowr_sync_product_show', { 'id': entity.id }) }}">{{ entity.id }}</a>
+                            <td>{{ entity.flowrId }}</td>
+                            <td>{{ entity.flowrCode }}</td>
+                            <td>
+                                {% if entity.flowrSynced %}
+                                    {{ 'yes'|trans }}
+                                {% else %}
+                                    {{ 'no'|trans }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if entity.flowrSyncEnabled %}
+                                    {{ 'yes'|trans }}
+                                {% else %}
+                                    {{ 'no'|trans }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ path('admin_user_show', { 'id': entity.id }) }}">
+                                    {{ entity.name }}
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+{% endblock %}
