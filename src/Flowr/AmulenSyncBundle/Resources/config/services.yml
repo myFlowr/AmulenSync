@@ -12,3 +12,13 @@ services:
         arguments: ['@router', '@translator']
         tags:
             - { name: kernel.event_subscriber }
+
+    flowr_amulensync.repository.setting:
+        class: Doctrine\ORM\EntityRepository
+        factory: ["@doctrine.orm.entity_manager", getRepository]
+        arguments:
+            - Flowr\AmulenSyncBundle\Entity\Setting
+
+    flowr_amulensync.settings:
+        class: Flowr\AmulenSyncBundle\Service\SettingService
+        arguments: ['@flowr_amulensync.repository.setting']
