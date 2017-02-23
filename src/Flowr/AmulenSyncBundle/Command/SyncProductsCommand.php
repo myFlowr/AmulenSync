@@ -256,6 +256,7 @@ class SyncProductsCommand extends ContainerAwareCommand
             $mediaGallery = new Gallery();
             $mediaGallery->setName($product->getName());
             $product->setMediaGallery($mediaGallery);
+            $this->getEM()->persist($mediaGallery);
         }
 
         $imageMediaType = $this->mediaTypeRepo->findOneBy([
@@ -283,7 +284,7 @@ class SyncProductsCommand extends ContainerAwareCommand
                 $product->setMediaGallery($mediaGallery);
                 $this->getEM()->persist($media);
                 $this->getEM()->persist($galleryItem);
-                $this->getEM()->persist($mediaGallery);
+
 
             } else {
 
