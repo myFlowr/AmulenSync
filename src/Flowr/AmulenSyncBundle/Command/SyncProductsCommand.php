@@ -37,6 +37,8 @@ class SyncProductsCommand extends ContainerAwareCommand
     private $mediaTypeRepo;
     private $productCategoryRepo;
     private $settings;
+    private $syncedProducts;
+
 
     protected function configure()
     {
@@ -54,6 +56,8 @@ class SyncProductsCommand extends ContainerAwareCommand
         $output->writeln(date("Y-m-d H:i:s") . " - starting sync.");
 
         $this->entityManager = $this->getContainer()->get("doctrine.orm.entity_manager");
+
+        $syncedProducts = [];
 
         /** @var SettingService $settingService */
         $settingService = $this->getContainer()->get('flowr_amulensync.settings');
@@ -130,7 +134,12 @@ class SyncProductsCommand extends ContainerAwareCommand
 
                     $product->setFlowrSynced(true);
                     $product->setFlowrSyncEnabled(true);
+
                     $product->setName($productArr['name']);
+
+                    if (isset($productArr['description'])) {
+                        $product->setDescription($productArr['description']);
+                    }
 
 
                     $product = $this->processImages($product, $productArr);
@@ -145,6 +154,10 @@ class SyncProductsCommand extends ContainerAwareCommand
                     if (isset($productArr['sale_price'])) {
                         $product->setPrice($productArr['sale_price']);
                     }
+
+
+                    /* Track what was synced */
+                    array_push($syncedProducts, $product->getId());
 
                 }
 
@@ -187,6 +200,8 @@ class SyncProductsCommand extends ContainerAwareCommand
     private function processCustomFields(Product $product, $productArr)
     {
         if (isset($productArr['custom_fields']) && count($productArr['custom_fields']) > 0) {
+
+            $product = $this->addProductItemFieldData($product);
 
             foreach ($productArr['custom_fields'] as $customFieldArr) {
 

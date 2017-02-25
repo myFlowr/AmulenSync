@@ -73,7 +73,7 @@ class SyncOrdersCommand extends ContainerAwareCommand
         ));
 
         $apiUrl = self::FLOWR_URL_ORDER_POST;
-        str_replace("{salepoint}", $settingSalePoint->getValue(), $apiUrl);
+        $apiUrl = str_replace('{salepoint}', $settingSalePoint->getValue(), $apiUrl);
 
         $client = new Client([
             'base_uri' => $settingUrl->getValue(),
@@ -100,11 +100,14 @@ class SyncOrdersCommand extends ContainerAwareCommand
 
             $notSyncedOrders = $this->getEM()->getRepository(ProductOrder::class)->findSynchronizableOrders();
 
+            $output->writeln("Not synced orders count: " . count($notSyncedOrders));
+
             /** @var ProductOrder $order */
             foreach ($notSyncedOrders as $order) {
 
+                $output->writeln("About to sync order: " . $order->getId());
 
-                if (!$order->getUser()) {
+                if (!$order->getUser() || !$order->getUser()->getFlowrId()) {
                     $order->setFlowrSynced(true);
                     $order->setFlowrSyncStatus(ProductOrder::sync_status_not_valid);
                     $order->setFlowrSyncMessage("No tiene usuario valido.");
@@ -185,6 +188,7 @@ class SyncOrdersCommand extends ContainerAwareCommand
 
         }
 
+        $output->writeln(date("Y-m-d H:i:s") . " - flowr synced.");
         $this->getContainer()->get("logger")->info(date("Y-m-d H:i:s") . " - flowr synced.");
     }
 
