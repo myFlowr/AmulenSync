@@ -9,6 +9,7 @@ use Amulen\MediaBundle\Entity\MediaType;
 use Amulen\ShopBundle\Entity\Product;
 use Amulen\ShopBundle\Entity\ProductOrder;
 use Amulen\ShopBundle\Entity\ProductOrderItem;
+use Flowcode\DashboardBundle\Entity\Job;
 use Flower\ModelBundle\Entity\Project\ProjectIteration;
 use Flowr\AmulenSyncBundle\Entity\Setting;
 use GuzzleHttp\Client;
@@ -50,146 +51,167 @@ class SyncOrdersCommand extends ContainerAwareCommand
 
         $this->entityManager = $this->getContainer()->get("doctrine.orm.entity_manager");
 
-        $token = null;
+        $job = new Job();
+        $job->setName(self::COMMAND_NAME);
+        $job->setStatus(Job::STATUS_DOING);
+        $this->getEM()->persist($job);
+        $this->getEM()->flush();
+
+        try {
 
 
-        $settingUrl = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
-            'name' => Setting::FLOWR_URL
-        ));
-        $settingUsername = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
-            'name' => Setting::FLOWR_USERNAME
-        ));
-        $settingPassword = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
-            'name' => Setting::FLOWR_PASSWORD
-        ));
-        $settingSalePoint = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
-            'name' => Setting::FLOWR_SALES_SALE_POINT
-        ));
-        $settingSaleCategory = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
-            'name' => Setting::FLOWR_SALES_SALE_CATEGORY
-        ));
-        $settingTimeOut = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
-            'name' => Setting::SERVICE_TIMEOUT
-        ));
-
-        $apiUrl = self::FLOWR_URL_ORDER_POST;
-        $apiUrl = str_replace('{salepoint}', $settingSalePoint->getValue(), $apiUrl);
-
-        $client = new Client([
-            'base_uri' => $settingUrl->getValue(),
-            'timeout' => $settingTimeOut ? $settingTimeOut->getValue() : "10.0",
-        ]);
+            $token = null;
 
 
-        /* login */
-        $resLogin = $client->request('POST', self::FLOWR_URL_LOGIN, array(
-            'content_type' => "application/x-www-form-urlencoded",
-            'form_params' => array(
-                'username' => $settingUsername->getValue(),
-                'password' => $settingPassword->getValue(),
-            ),
-        ));
-        $codeLogin = $resLogin->getStatusCode();
-        if ($codeLogin == 200) {
-            $body = $resLogin->getBody();
-            $responseArr = json_decode($body, true);
-            $token = $responseArr['token'];
-        }
+            $settingUrl = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
+                'name' => Setting::FLOWR_URL
+            ));
+            $settingUsername = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
+                'name' => Setting::FLOWR_USERNAME
+            ));
+            $settingPassword = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
+                'name' => Setting::FLOWR_PASSWORD
+            ));
+            $settingSalePoint = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
+                'name' => Setting::FLOWR_SALES_SALE_POINT
+            ));
+            $settingSaleCategory = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
+                'name' => Setting::FLOWR_SALES_SALE_CATEGORY
+            ));
+            $settingTimeOut = $this->getEM()->getRepository('FlowrAmulenSyncBundle:Setting')->findOneBy(array(
+                'name' => Setting::SERVICE_TIMEOUT
+            ));
 
-        if ($token && strlen($token) > 0) {
+            $apiUrl = self::FLOWR_URL_ORDER_POST;
+            $apiUrl = str_replace('{salepoint}', $settingSalePoint->getValue(), $apiUrl);
 
-            $notSyncedOrders = $this->getEM()->getRepository(ProductOrder::class)->findSynchronizableOrders();
+            $client = new Client([
+                'base_uri' => $settingUrl->getValue(),
+                'timeout' => $settingTimeOut ? $settingTimeOut->getValue() : "10.0",
+            ]);
 
-            $output->writeln("Not synced orders count: " . count($notSyncedOrders));
 
-            /** @var ProductOrder $order */
-            foreach ($notSyncedOrders as $order) {
+            /* login */
+            $resLogin = $client->request('POST', self::FLOWR_URL_LOGIN, array(
+                'content_type' => "application/x-www-form-urlencoded",
+                'form_params' => array(
+                    'username' => $settingUsername->getValue(),
+                    'password' => $settingPassword->getValue(),
+                ),
+            ));
+            $codeLogin = $resLogin->getStatusCode();
+            if ($codeLogin == 200) {
+                $body = $resLogin->getBody();
+                $responseArr = json_decode($body, true);
+                $token = $responseArr['token'];
+            }
 
-                $output->writeln("About to sync order: " . $order->getId());
+            if ($token && strlen($token) > 0) {
 
-                if (!$order->getUser() || !$order->getUser()->getFlowrId()) {
-                    $order->setFlowrSynced(true);
-                    $order->setFlowrSyncStatus(ProductOrder::sync_status_not_valid);
-                    $order->setFlowrSyncMessage("No tiene usuario valido.");
-                    break;
-                }
+                $notSyncedOrders = $this->getEM()->getRepository(ProductOrder::class)->findSynchronizableOrders();
 
-                $orderItemsArr = [];
+                $output->writeln("Not synced orders count: " . count($notSyncedOrders));
 
-                $allFlowrProducts = true;
+                /** @var ProductOrder $order */
+                foreach ($notSyncedOrders as $order) {
 
-                /* @var ProductOrderItem $orderItem */
-                foreach ($order->getItems() as $orderItem) {
-                    if ($orderItem->getProduct() && $orderItem->getProduct()->getFlowrId()) {
-                        $newOrderItemArr = [
-                            'units' => $orderItem->getQuantity(),
-                            'unit_price' => $orderItem->getUnitPrice(),
-                            'product' => ['id' => $orderItem->getProduct()->getFlowrId()],
-                            'total' => $orderItem->getSubtotal(),
-                        ];
-                        array_push($orderItemsArr, $newOrderItemArr);
+                    $output->writeln("About to sync order: " . $order->getId());
 
-                    } else {
-                        $allFlowrProducts = false;
+                    if (!$order->getUser() || !$order->getUser()->getFlowrId()) {
+                        $order->setFlowrSynced(true);
+                        $order->setFlowrSyncStatus(ProductOrder::sync_status_not_valid);
+                        $order->setFlowrSyncMessage("No tiene usuario valido.");
                         break;
                     }
-                }
 
-                if (!$allFlowrProducts) {
+                    $orderItemsArr = [];
 
-                    $order->setFlowrSyncStatus(ProductOrder::sync_status_not_valid);
-                    $order->setFlowrSyncMessage("Hay productos que no estan en Flowr.");
+                    $allFlowrProducts = true;
 
-                    break;
+                    /* @var ProductOrderItem $orderItem */
+                    foreach ($order->getItems() as $orderItem) {
+                        if ($orderItem->getProduct() && $orderItem->getProduct()->getFlowrId()) {
+                            $newOrderItemArr = [
+                                'units' => $orderItem->getQuantity(),
+                                'unit_price' => $orderItem->getUnitPrice(),
+                                'product' => ['id' => $orderItem->getProduct()->getFlowrId()],
+                                'total' => $orderItem->getSubtotal(),
+                            ];
+                            array_push($orderItemsArr, $newOrderItemArr);
 
-                } else {
+                        } else {
+                            $allFlowrProducts = false;
+                            break;
+                        }
+                    }
 
-                    $formParams = [
-                        'status' => $settingSaleCategory->getValue(),
-                        'circuit' => 2,
-                        'sale_items' => $orderItemsArr,
-                        'payment_items' => [],
-                        'total' => $order->getTotal(),
-                        'sub_total' => $order->getTotal(),
-                        'total_with_tax' => $order->getTotal(),
-                        'account' => $order->getUser()->getFlowrId(),
-                    ];
+                    if (!$allFlowrProducts) {
 
-                    $res = null;
+                        $order->setFlowrSyncStatus(ProductOrder::sync_status_not_valid);
+                        $order->setFlowrSyncMessage("Hay productos que no estan en Flowr.");
 
-                    $res = $client->request('POST', $apiUrl, array(
-                        'content_type' => "application/x-www-form-urlencoded",
-                        'headers' => array(
-                            'Authorization' => "Bearer $token",
-                        ),
-                        'form_params' => $formParams,
-                    ));
+                        break;
 
-                    $code = $res->getStatusCode();
-                    if ($code == Response::HTTP_OK) {
-                        $body = $res->getBody();
-                        $responseArr = json_decode($body, true);
-
-                        $syncedOrder = $responseArr['entity'];
-
-                        $order->setFlowrSynced(true);
-                        $order->setFlowrId($syncedOrder['id']);
-                        $order->setFlowrSyncStatus(ProductOrder::sync_status_ok);
                     } else {
-                        $order->setFlowrSynced(true);
-                        $order->setFlowrSyncMessage("Server error.");
-                        $order->setFlowrSyncStatus(ProductOrder::sync_status_fail);
+
+                        $formParams = [
+                            'status' => $settingSaleCategory->getValue(),
+                            'circuit' => 2,
+                            'sale_items' => $orderItemsArr,
+                            'payment_items' => [],
+                            'total' => $order->getTotal(),
+                            'sub_total' => $order->getTotal(),
+                            'total_with_tax' => $order->getTotal(),
+                            'account' => $order->getUser()->getFlowrId(),
+                        ];
+
+                        $res = null;
+
+                        $res = $client->request('POST', $apiUrl, array(
+                            'content_type' => "application/x-www-form-urlencoded",
+                            'headers' => array(
+                                'Authorization' => "Bearer $token",
+                            ),
+                            'form_params' => $formParams,
+                        ));
+
+                        $code = $res->getStatusCode();
+                        if ($code == Response::HTTP_OK) {
+                            $body = $res->getBody();
+                            $responseArr = json_decode($body, true);
+
+                            $syncedOrder = $responseArr['entity'];
+
+                            $order->setFlowrSynced(true);
+                            $order->setFlowrId($syncedOrder['id']);
+                            $order->setFlowrSyncStatus(ProductOrder::sync_status_ok);
+                        } else {
+                            $order->setFlowrSynced(true);
+                            $order->setFlowrSyncMessage("Server error.");
+                            $order->setFlowrSyncStatus(ProductOrder::sync_status_fail);
+                        }
                     }
                 }
+
+
+                $this->getEM()->flush();
+
             }
 
 
+            $job->setStatus(Job::STATUS_DONE_OK);
+            $this->getEM()->flush();
+
+            $output->writeln(date("Y-m-d H:i:s") . " - flowr synced.");
+            $this->getContainer()->get("logger")->info(date("Y-m-d H:i:s") . " - flowr synced.");
+
+        } catch (\Exception $exception) {
+
+            $job->setStatus(Job::STATUS_DONE_FAIL);
             $this->getEM()->flush();
 
         }
 
-        $output->writeln(date("Y-m-d H:i:s") . " - flowr synced.");
-        $this->getContainer()->get("logger")->info(date("Y-m-d H:i:s") . " - flowr synced.");
     }
 
     /**

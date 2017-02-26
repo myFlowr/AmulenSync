@@ -13,6 +13,11 @@ services:
         tags:
             - { name: kernel.event_subscriber }
 
+    flowr_amulensync.collectjobs_eventsubscriber:
+        class: Flowr\AmulenSyncBundle\Event\CollectJobsSubscriber
+        tags:
+            - { name: kernel.event_subscriber }
+
     flowr_amulensync.repository.setting:
         class: Doctrine\ORM\EntityRepository
         factory: ["@doctrine.orm.entity_manager", getRepository]

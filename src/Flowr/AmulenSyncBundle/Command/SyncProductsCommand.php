@@ -10,6 +10,7 @@ use Amulen\MediaBundle\Entity\MediaType;
 use Amulen\ShopBundle\Entity\Product;
 use Amulen\ShopBundle\Entity\ProductItemField;
 use Amulen\ShopBundle\Entity\ProductItemFieldData;
+use Flowcode\DashboardBundle\Entity\Job;
 use Flower\ModelBundle\Entity\Project\ProjectIteration;
 use Flowr\AmulenSyncBundle\Entity\Setting;
 use Flowr\AmulenSyncBundle\Service\SettingService;
@@ -57,117 +58,135 @@ class SyncProductsCommand extends ContainerAwareCommand
 
         $this->entityManager = $this->getContainer()->get("doctrine.orm.entity_manager");
 
-        $syncedProducts = [];
+        $job = new Job();
+        $job->setName(self::COMMAND_NAME);
+        $job->setStatus(Job::STATUS_DOING);
+        $this->getEM()->persist($job);
+        $this->getEM()->flush();
 
-        /** @var SettingService $settingService */
-        $settingService = $this->getContainer()->get('flowr_amulensync.settings');
+        try {
 
-        $this->mediaTypeRepo = $this->getEM()->getRepository(MediaType::class);
-        $this->productCategoryRepo = $this->getEM()->getRepository(Category::class);
+            $syncedProducts = [];
 
-        $token = null;
+            /** @var SettingService $settingService */
+            $settingService = $this->getContainer()->get('flowr_amulensync.settings');
 
-        $this->settings = [
-            'url' => $settingService->get(Setting::FLOWR_URL),
-            'username' => $settingService->get(Setting::FLOWR_USERNAME),
-            'password' => $settingService->get(Setting::FLOWR_PASSWORD),
-            'contactSource' => $settingService->get(Setting::FLOWR_CONTACT_SOURCE),
-            'timeOut' => $settingService->get(Setting::SERVICE_TIMEOUT),
-        ];
+            $this->mediaTypeRepo = $this->getEM()->getRepository(MediaType::class);
+            $this->productCategoryRepo = $this->getEM()->getRepository(Category::class);
 
+            $token = null;
 
-        $client = new Client([
-            'base_uri' => $this->settings['url'],
-            'timeout' => $this->settings['timeOut'] ? $this->settings['timeOut'] : "10.0",
-        ]);
+            $this->settings = [
+                'url' => $settingService->get(Setting::FLOWR_URL),
+                'username' => $settingService->get(Setting::FLOWR_USERNAME),
+                'password' => $settingService->get(Setting::FLOWR_PASSWORD),
+                'contactSource' => $settingService->get(Setting::FLOWR_CONTACT_SOURCE),
+                'timeOut' => $settingService->get(Setting::SERVICE_TIMEOUT),
+            ];
 
 
-        /* login */
-        $resLogin = $client->request('POST', self::FLOWR_URL_LOGIN, array(
-            'content_type' => "application/x-www-form-urlencoded",
-            'form_params' => array(
-                'username' => $this->settings['username'],
-                'password' => $this->settings['password'],
-            ),
-        ));
-        $codeLogin = $resLogin->getStatusCode();
-        if ($codeLogin == 200) {
-            $body = $resLogin->getBody();
-            $responseArr = json_decode($body, true);
-            $token = $responseArr['token'];
-        }
+            $client = new Client([
+                'base_uri' => $this->settings['url'],
+                'timeout' => $this->settings['timeOut'] ? $this->settings['timeOut'] : "10.0",
+            ]);
 
-        if ($token) {
-            $res = $client->request('GET', self::FLOWR_URL_PRODUCT_GET, array(
+
+            /* login */
+            $resLogin = $client->request('POST', self::FLOWR_URL_LOGIN, array(
                 'content_type' => "application/x-www-form-urlencoded",
-                'headers' => array(
-                    'Authorization' => "Bearer $token",
+                'form_params' => array(
+                    'username' => $this->settings['username'],
+                    'password' => $this->settings['password'],
                 ),
             ));
-
-            $code = $res->getStatusCode();
-            if ($code == Response::HTTP_OK) {
-                $body = $res->getBody();
+            $codeLogin = $resLogin->getStatusCode();
+            if ($codeLogin == 200) {
+                $body = $resLogin->getBody();
                 $responseArr = json_decode($body, true);
-
-                $productRepo = $this->getEM()->getRepository(Product::class);
-
-                foreach ($responseArr as $productArr) {
-
-                    $output->write("Product id:");
-                    $output->writeln($productArr['id']);
-
-                    $product = $productRepo->findOneBy([
-                        'flowrId' => $productArr['id']
-                    ]);
-
-                    if (!$product) {
-                        $product = new Product();
-                        $product->setFlowrId($productArr['id']);
-                        $this->getEM()->persist($product);
-                    }
-
-                    // Update fields
-                    if (isset($productArr['code'])) {
-                        $product->setFlowrCode($productArr['code']);
-                    }
-
-                    $product->setFlowrSynced(true);
-                    $product->setFlowrSyncEnabled(true);
-
-                    $product->setName($productArr['name']);
-
-                    if (isset($productArr['description'])) {
-                        $product->setDescription($productArr['description']);
-                    }
-
-
-                    $product = $this->processImages($product, $productArr);
-
-                    $product = $this->processRawMaterials($product, $productArr);
-
-                    $product = $this->processCustomFields($product, $productArr);
-
-                    $product = $this->processCategories($product, $productArr);
-
-
-                    if (isset($productArr['sale_price'])) {
-                        $product->setPrice($productArr['sale_price']);
-                    }
-
-
-                    /* Track what was synced */
-                    array_push($syncedProducts, $product->getId());
-
-                }
-
-                $this->getEM()->flush();
+                $token = $responseArr['token'];
             }
 
+            if ($token) {
+                $res = $client->request('GET', self::FLOWR_URL_PRODUCT_GET, array(
+                    'content_type' => "application/x-www-form-urlencoded",
+                    'headers' => array(
+                        'Authorization' => "Bearer $token",
+                    ),
+                ));
+
+                $code = $res->getStatusCode();
+                if ($code == Response::HTTP_OK) {
+                    $body = $res->getBody();
+                    $responseArr = json_decode($body, true);
+
+                    $productRepo = $this->getEM()->getRepository(Product::class);
+
+                    foreach ($responseArr as $productArr) {
+
+                        $output->write("Product id:");
+                        $output->writeln($productArr['id']);
+
+                        $product = $productRepo->findOneBy([
+                            'flowrId' => $productArr['id']
+                        ]);
+
+                        if (!$product) {
+                            $product = new Product();
+                            $product->setFlowrId($productArr['id']);
+                            $this->getEM()->persist($product);
+                        }
+
+                        // Update fields
+                        if (isset($productArr['code'])) {
+                            $product->setFlowrCode($productArr['code']);
+                        }
+
+                        $product->setFlowrSynced(true);
+                        $product->setFlowrSyncEnabled(true);
+
+                        $product->setName($productArr['name']);
+
+                        if (isset($productArr['description'])) {
+                            $product->setDescription($productArr['description']);
+                        }
+
+
+                        $product = $this->processImages($product, $productArr);
+
+                        $product = $this->processRawMaterials($product, $productArr);
+
+                        $product = $this->processCustomFields($product, $productArr);
+
+                        $product = $this->processCategories($product, $productArr);
+
+
+                        if (isset($productArr['sale_price'])) {
+                            $product->setPrice($productArr['sale_price']);
+                        }
+
+
+                        /* Track what was synced */
+                        array_push($syncedProducts, $product->getId());
+
+                    }
+
+                    $this->getEM()->flush();
+                }
+
+            }
+
+
+            $job->setStatus(Job::STATUS_DONE_OK);
+            $this->getEM()->flush();
+
+            $output->writeln(date("Y-m-d H:i:s") . " - flowr synced.");
+            $this->getContainer()->get("logger")->info(date("Y-m-d H:i:s") . " - flowr synced.");
+
+        } catch (\Exception $exception) {
+            $job->setStatus(Job::STATUS_DONE_FAIL);
+            $this->getEM()->flush();
         }
 
-        $output->writeln(date("Y-m-d H:i:s") . " - flowr synced.");
-        $this->getContainer()->get("logger")->info(date("Y-m-d H:i:s") . " - flowr synced.");
     }
 
     /**
