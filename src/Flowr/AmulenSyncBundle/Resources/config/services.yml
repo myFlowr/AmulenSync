@@ -18,6 +18,12 @@ services:
         tags:
             - { name: kernel.event_subscriber }
 
+    flowr_amulensync.collectsettings_eventsubscriber:
+        class: Flowr\AmulenSyncBundle\Event\CollectSettingOptionsSubscriber
+        arguments: ['@translator']
+        tags:
+            - { name: kernel.event_subscriber }
+
     flowr_amulensync.repository.setting:
         class: Doctrine\ORM\EntityRepository
         factory: ["@doctrine.orm.entity_manager", getRepository]

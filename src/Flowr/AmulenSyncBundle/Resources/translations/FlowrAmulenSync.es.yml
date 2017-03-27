@@ -6,11 +6,13 @@ Users list: Usuarios
 FlowrId: ID Flowr
 FlowrCode: Código Flowr
 Synced: Sincronizado
-Flowr Url: Url donde se encuentra su cuenta de Flowr
-Flowr Username: Usuario de Flowr
-Flowr Password: Contraseña de Flowr
-Contact Source: Toma de contacto
-Users fields: Campos de usuarios (separados por coma)
+Flowr Url: Flowr - Url donde se encuentra su cuenta de Flowr
+Flowr Username: Flowr - Usuario
+Flowr Password: Flowr - Contraseña
+Contact Source: Flowr - Toma de contacto
+Users fields: Flowr - Campos de usuarios (separados por coma)
 FlowrSyncEnabled: Habilitado para sincronizar
+Sale category: Flowr - Categoría de venta
+Sale point: Flowr - Punto de venta
 
 Products list: Productos
