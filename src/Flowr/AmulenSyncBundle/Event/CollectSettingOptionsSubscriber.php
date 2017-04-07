@@ -2,7 +2,7 @@
 
 namespace Flowr\AmulenSyncBundle\Event;
 
-use Flowcode\DashboardBundle\Entity\Setting;
+
 use Flowcode\DashboardBundle\Event\CollectSettingOptionsEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Translation\TranslatorInterface;
@@ -64,6 +64,11 @@ class CollectSettingOptionsSubscriber implements EventSubscriberInterface
         $event->addSettingOption([
             "key" => \Flowr\AmulenSyncBundle\Model\Setting::FLOWR_SALES_SALE_POINT,
             "label" => $this->translator->trans('Sale point', [], 'FlowrAmulenSync'),
+        ]);
+
+        $event->addSettingOption([
+            "key" => \Flowr\AmulenSyncBundle\Model\Setting::FLOWR_PRODUCTS_PRICE_LIST,
+            "label" => $this->translator->trans('Price list', [], 'FlowrAmulenSync'),
         ]);
 
 

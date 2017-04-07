@@ -32,7 +32,7 @@ class SyncProductsCommand extends AmulenCommand
 {
 
     const FLOWR_URL_LOGIN = "/api/users/login";
-    const FLOWR_URL_PRODUCT_GET = "/api/stock/products/forsale";
+    const FLOWR_URL_PRODUCT_GET = "/api/stock/products/forsale/pricelist";
     const FLOWR_ACCOUNT_ALREADY_CREATED = "Account already synced";
     const COMMAND_NAME = "amulen:flowr:syncproducts";
 
@@ -260,6 +260,7 @@ class SyncProductsCommand extends AmulenCommand
             'password' => $this->getSettings()->get(Setting::FLOWR_PASSWORD),
             'contactSource' => $this->getSettings()->get(Setting::FLOWR_CONTACT_SOURCE),
             'timeOut' => $this->getSettings()->get(Setting::SERVICE_TIMEOUT),
+            'priceListId' => $this->getSettings()->get(Setting::FLOWR_PRODUCTS_PRICE_LIST),
         ];
 
 
@@ -290,6 +291,7 @@ class SyncProductsCommand extends AmulenCommand
                 'headers' => array(
                     'Authorization' => "Bearer $token",
                 ),
+                'query' => "pricelist=" . $this->settings['priceListId'],
             ));
 
             $code = $res->getStatusCode();

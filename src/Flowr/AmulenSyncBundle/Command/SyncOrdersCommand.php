@@ -94,10 +94,15 @@ class SyncOrdersCommand extends AmulenCommand
 
                 $output->writeln("About to sync order: " . $order->getId());
 
-                if (!$order->getUser() || !$order->getUser()->getFlowrId()) {
+                if (!$order->getUser()) {
                     $order->setFlowrSynced(true);
                     $order->setFlowrSyncStatus(ProductOrder::sync_status_not_valid);
                     $order->setFlowrSyncMessage("No tiene usuario valido.");
+                    break;
+                } elseif (!$order->getUser()->getFlowrId()) {
+                    $order->setFlowrSynced(false);
+                    $order->setFlowrSyncStatus(ProductOrder::sync_status_pending);
+                    $order->setFlowrSyncMessage("Esperando sync de usurios.");
                     break;
                 }
 

@@ -8,6 +8,7 @@ use Flowr\AmulenSyncBundle\Entity\Setting;
 use GuzzleHttp\Client;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Description of UpgradeCommand
@@ -70,8 +71,19 @@ class SyncUsersCommand extends AmulenCommand
 
         if ($token) {
 
+            $output->writeln($token);
+
             /* @var User $user */
             foreach ($entities as $user) {
+
+                $params = [
+                    'firstname' => $user->getFirstname(),
+                    'lastname' => $user->getLastname(),
+                    'email' => $user->getEmail(),
+                    'contact_source' => $settingContactSource ?? "Amulen Web",
+                ];
+
+                $output->writeln($params);
 
                 $user->setFlowrSynced(false);
                 $res = $client->request('POST', self::FLOWR_URL_ACCOUNT_CREATE, array(
@@ -79,16 +91,11 @@ class SyncUsersCommand extends AmulenCommand
                     'headers' => array(
                         'Authorization' => "Bearer $token",
                     ),
-                    'form_params' => array(
-                        'firstname' => $user->getFirstname(),
-                        'lastname' => $user->getLastname(),
-                        'email' => $user->getEmail(),
-                        'contact_source' => $settingContactSource ?? "Amulen Web",
-                    ),
+                    'form_params' => $params,
                 ));
 
                 $code = $res->getStatusCode();
-                if ($code == 200) {
+                if ($code == Response::HTTP_OK) {
                     $body = $res->getBody();
                     $responseArr = json_decode($body, true);
                     $flowrUser = $responseArr['entity'];
@@ -107,6 +114,9 @@ class SyncUsersCommand extends AmulenCommand
                             $user->setFlowrCode($flowrUser['code']);
                         }
                     }
+                } else {
+                    $body = $res->getBody();
+                    $output->writeln($body);
                 }
 
                 $this->getEM()->flush();
