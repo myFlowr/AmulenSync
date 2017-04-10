@@ -330,13 +330,16 @@ class SyncProductsCommand extends AmulenCommand
                         $product->setDescription($productArr['description']);
                     }
 
-
+                    $output->writeln("Processing images...");
                     $product = $this->processImages($product, $productArr);
 
+                    $output->writeln("Processing raw materials...");
                     $product = $this->processRawMaterials($product, $productArr);
 
+                    $output->writeln("Processing custom fields...");
                     $product = $this->processCustomFields($product, $productArr);
 
+                    $output->writeln("Processing categories...");
                     $product = $this->processCategories($product, $productArr);
 
 
@@ -346,11 +349,15 @@ class SyncProductsCommand extends AmulenCommand
 
 
                     /* Track what was synced */
+                    $output->writeln("Tracking product...");
                     array_push($syncedProducts, $product->getId());
 
                 }
 
                 $this->getEM()->flush();
+
+            } else {
+                throw new \Exception('Not not not');
             }
 
         }
