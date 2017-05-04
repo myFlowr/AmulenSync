@@ -44,6 +44,10 @@ class ShowMenuSubscriber implements EventSubscriberInterface
                     "url" => $this->router->generate('admin_flowr_sync_product'),
                     "title" => $this->translator->trans('Sync Products'),
                 ),
+                array(
+                    "url" => $this->router->generate('admin_flowr_sync_service'),
+                    "title" => $this->translator->trans('Sync Services'),
+                ),
             ),
         );
 

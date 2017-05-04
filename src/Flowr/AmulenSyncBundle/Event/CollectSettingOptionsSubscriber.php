@@ -68,7 +68,12 @@ class CollectSettingOptionsSubscriber implements EventSubscriberInterface
 
         $event->addSettingOption([
             "key" => \Flowr\AmulenSyncBundle\Model\Setting::FLOWR_PRODUCTS_PRICE_LIST,
-            "label" => $this->translator->trans('Price list', [], 'FlowrAmulenSync'),
+            "label" => $this->translator->trans('Product price list', [], 'FlowrAmulenSync'),
+        ]);
+
+        $event->addSettingOption([
+            "key" => \Flowr\AmulenSyncBundle\Model\Setting::FLOWR_SERVICES_PRICE_LIST,
+            "label" => $this->translator->trans('Service price list', [], 'FlowrAmulenSync'),
         ]);
 
 

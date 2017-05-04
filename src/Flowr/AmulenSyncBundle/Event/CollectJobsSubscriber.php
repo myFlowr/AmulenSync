@@ -6,6 +6,7 @@ namespace Flowr\AmulenSyncBundle\Event;
 use Flowcode\DashboardBundle\Event\CollectJobsEvent;
 use Flowr\AmulenSyncBundle\Command\SyncOrdersCommand;
 use Flowr\AmulenSyncBundle\Command\SyncProductsCommand;
+use Flowr\AmulenSyncBundle\Command\SyncServicesCommand;
 use Flowr\AmulenSyncBundle\Command\SyncUsersCommand;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -31,6 +32,12 @@ class CollectJobsSubscriber implements EventSubscriberInterface
         $syncProductsJob = [
             'name' => SyncProductsCommand::COMMAND_NAME,
             'command' => SyncProductsCommand::COMMAND_NAME,
+        ];
+        $event->pushJob($syncProductsJob);
+
+        $syncProductsJob = [
+            'name' => SyncServicesCommand::COMMAND_NAME,
+            'command' => SyncServicesCommand::COMMAND_NAME,
         ];
         $event->pushJob($syncProductsJob);
 

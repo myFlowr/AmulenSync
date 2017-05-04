@@ -14,6 +14,7 @@ Users fields: Flowr - Campos de usuarios (separados por coma)
 FlowrSyncEnabled: Flowr - Habilitado para sincronizar
 Sale category: Flowr - Categoría de venta
 Sale point: Flowr - Punto de venta
-Price list: Flowr - Lista de Precios
+Product price list: Flowr - Lista de Precios de Productos
+Service price list: Flowr - Lista de Precios de Servicios
 
 Products list: Productos

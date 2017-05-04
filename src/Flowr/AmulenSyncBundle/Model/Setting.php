@@ -17,6 +17,7 @@ class Setting
     const FLOWR_SALES_SALE_POINT = "flowr_sales_sale_point";
     const FLOWR_SALES_SALE_CATEGORY = "flowr_sales_sale_category";
     const FLOWR_PRODUCTS_PRICE_LIST = "flowr_products_price_list";
+    const FLOWR_SERVICES_PRICE_LIST = "flowr_services_price_list";
     const FLOWR_FIELDS = "flowr_fields";
     const SERVICE_TIMEOUT = "service_timeout";
 
