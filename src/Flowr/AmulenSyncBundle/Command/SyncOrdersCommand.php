@@ -118,7 +118,7 @@ class SyncOrdersCommand extends AmulenCommand
                             'unit_price' => $orderItem->getUnitPrice(),
                             'total' => $orderItem->getSubtotal(),
                         ];
-                        if($orderItem->getProduct()){
+                        if ($orderItem->getProduct()) {
                             $newOrderItemArr['product'] = ['id' => $orderItem->getProduct()->getFlowrId()];
                         } else {
                             $newOrderItemArr['service'] = ['id' => $orderItem->getService()->getFlowrId()];
@@ -139,14 +139,26 @@ class SyncOrdersCommand extends AmulenCommand
                     break;
 
                 } else {
+                    $deliveryDate = $order->getDeliveryDate() ? $order->getDeliveryDate()->format('Y-m-d H:i:s') : null;
 
                     $formParams = [
                         'status' => $settingSaleCategory,
                         'circuit' => 2,
                         'sale_items' => $orderItemsArr,
                         'payment_items' => [],
+                        'street' => $order->getStreet(),
+                        'street_number' => $order->getStreetNumber(),
+                        'apartment' => $order->getDepartment(),
+                        'locality' => $order->getLocality(),
+                        'zip_code' => $order->getZipCode(),
+                        'city' => $order->getCity(),
+                        'country' => $order->getCountry(),
+                        'delivery_date' => $deliveryDate,
                         'total' => $order->getTotal(),
-                        'sub_total' => $order->getTotal(),
+                        'sub_total' => $order->getSubTotal(),
+                        'discount' => $order->getDiscount(),
+                        'totalDiscount' => $order->getTotalDiscount(),
+                        'discountType' => $order->getDiscountType(),
                         'total_with_tax' => $order->getTotal(),
                         'account' => $order->getUser()->getFlowrId(),
                     ];
