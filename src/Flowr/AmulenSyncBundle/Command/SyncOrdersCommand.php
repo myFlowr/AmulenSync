@@ -112,13 +112,17 @@ class SyncOrdersCommand extends AmulenCommand
 
                 /* @var ProductOrderItem $orderItem */
                 foreach ($order->getItems() as $orderItem) {
-                    if ($orderItem->getProduct() && $orderItem->getProduct()->getFlowrId()) {
+                    if (($orderItem->getProduct() && $orderItem->getProduct()->getFlowrId()) || ($orderItem->getService() && $orderItem->getService()->getFlowrId())) {
                         $newOrderItemArr = [
                             'units' => $orderItem->getQuantity(),
                             'unit_price' => $orderItem->getUnitPrice(),
-                            'product' => ['id' => $orderItem->getProduct()->getFlowrId()],
                             'total' => $orderItem->getSubtotal(),
                         ];
+                        if($orderItem->getProduct()){
+                            $newOrderItemArr['product'] = ['id' => $orderItem->getProduct()->getFlowrId()];
+                        } else {
+                            $newOrderItemArr['service'] = ['id' => $orderItem->getService()->getFlowrId()];
+                        }
                         array_push($orderItemsArr, $newOrderItemArr);
 
                     } else {
