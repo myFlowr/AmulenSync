@@ -66,6 +66,20 @@ class SyncProductsCommand extends AmulenCommand
             ]);
             if ($productCateogory) {
                 $product->setCategory($productCateogory);
+            } else {
+                $productCateogory = new Category();
+                $productCateogory->setName($categoryArr['name']);
+                $productCateogories = $this->productCategoryRepo->findBy([],['position' => 'desc']);
+                $position = 0;
+                if (sizeof($productCateogories) > 0) {
+                    $productCateogory->setPosition($productCateogories[0]->getPosition()+1);
+                }
+                $parent = $this->productCategoryRepo->findOneBy(['position' => 0]);
+                $productCateogory->setParent($parent);
+                $productCateogory->setPosition($position);
+                $this->getEm()->persist($productCateogory);
+                $this->getEm()->flush();
+                $product->setCategory($productCateogory);
             }
         }
 
