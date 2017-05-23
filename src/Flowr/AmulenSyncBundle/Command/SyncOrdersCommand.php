@@ -148,7 +148,7 @@ class SyncOrdersCommand extends AmulenCommand
                         'payment_items' => [],
                         'street' => $order->getStreet(),
                         'street_number' => $order->getStreetNumber(),
-                        'apartment' => $order->getDepartment(),
+                        'apartment' => $order->getApartment(),
                         'locality' => $order->getLocality(),
                         'zip_code' => $order->getZipCode(),
                         'city' => $order->getCity(),
