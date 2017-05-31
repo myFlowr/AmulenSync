@@ -3,6 +3,7 @@
 namespace Flowr\AmulenSyncBundle\Command;
 
 use Amulen\UserBundle\Entity\User;
+use Amulen\UserBundle\Entity\UserAddress;
 use Flowcode\DashboardBundle\Command\AmulenCommand;
 use Flowr\AmulenSyncBundle\Entity\Setting;
 use GuzzleHttp\Client;
@@ -112,6 +113,31 @@ class SyncUsersCommand extends AmulenCommand
                         }
                         if (isset($flowrUser['code'])) {
                             $user->setFlowrCode($flowrUser['code']);
+                        }
+                        if (isset($flowrUser['addresses'])) {
+
+                            foreach ($flowrUser['addresses'] as $addressArr) {
+                                $address = $user->getAddress($addressArr['street']);
+                                print_r($addressArr);
+                                if (!$address) {
+                                    $address = new UserAddress();
+                                }
+                                $address->setType($addressArr['type']);
+                                $address->setStreet($addressArr['street']);
+                                $address->setApartment($addressArr['apartment']);
+
+                                if ($addressArr['country']) {
+                                    $address->setCountry($addressArr['country']['name']);
+                                }
+
+                                $address->setState($addressArr['state']);
+                                $address->setPostalCode($addressArr['postal_code']);
+                                $address->setLatitude($addressArr['latitude']);
+                                $address->setLongitude($addressArr['longitude']);
+                                $address->setUser($user);
+                                $this->getEM()->persist($address);
+                            }
+
                         }
                     }
                 } else {
