@@ -2,6 +2,7 @@
 
 namespace Flowr\AmulenSyncBundle\Command;
 
+use Amulen\ClassificationBundle\Entity\Category;
 use Amulen\MediaBundle\Entity\Gallery;
 use Amulen\MediaBundle\Entity\GalleryItem;
 use Amulen\MediaBundle\Entity\Media;
@@ -35,6 +36,7 @@ class SyncServicesCommand extends AmulenCommand
 
 
     private $mediaTypeRepo;
+    private $serviceCategoryRepo;
 
     private $syncedServices;
 
@@ -44,6 +46,49 @@ class SyncServicesCommand extends AmulenCommand
         $this
             ->setName(self::COMMAND_NAME)
             ->setDescription('Syncronize services with Flowr');
+    }
+
+
+    /**
+     * @param Service $service
+     * @param $serviceArr
+     * @return Service
+     */
+    private function processCategories(Service $service, $serviceArr)
+    {
+        if (isset($serviceArr['categories']) && count($serviceArr['categories']) > 0) {
+
+            $categoryArr = $serviceArr['categories'][0];
+            $serviceCategory = $this->serviceCategoryRepo->findOneBy([
+                'name' => $categoryArr['name'],
+            ]);
+            if ($serviceCategory) {
+                $service->setCategory($serviceCategory);
+            } else {
+                $serviceCategory = new Category();
+                $serviceCategory->setName($categoryArr['name']);
+                $serviceCateogories = $this->serviceCategoryRepo->findBy([], ['position' => 'desc']);
+                $position = 0;
+                if (sizeof($serviceCateogories) > 0) {
+                    $serviceCategory->setPosition($serviceCateogories[0]->getPosition() + 1);
+                }
+                $parent = $this->serviceCategoryRepo->findOneBy(['position' => 0, 'slug' => 'service']);
+                if (!$parent) {
+                    $parent = new Category();
+                    $parent->setName('service');
+                    $parent->setPosition(0);
+                    $this->getEm()->persist($parent);
+                }
+                $serviceCategory->setParent($parent);
+                $serviceCategory->setPosition($position);
+                $this->getEm()->persist($serviceCategory);
+                $this->getEm()->flush();
+                $service->setCategory($serviceCategory);
+            }
+        }
+
+        return $service;
+
     }
 
     /**
@@ -137,6 +182,7 @@ class SyncServicesCommand extends AmulenCommand
         $syncedServices = [];
 
         $this->mediaTypeRepo = $this->getEM()->getRepository(MediaType::class);
+        $this->serviceCategoryRepo = $this->getEM()->getRepository(Category::class);
 
         $token = null;
 
@@ -220,7 +266,11 @@ class SyncServicesCommand extends AmulenCommand
                         $service->setDetail($serviceArr['detail']);
                     }
 
+                    $output->writeln("Processing images...");
                     $service = $this->processImages($service, $serviceArr);
+
+                    $output->writeln("Processing categories...");
+                    $service = $this->processCategories($service, $serviceArr);
 
                     if (isset($serviceArr['price'])) {
                         $service->setPrice($serviceArr['price']);
