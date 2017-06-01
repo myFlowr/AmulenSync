@@ -77,14 +77,26 @@ class SyncUsersCommand extends AmulenCommand
             /* @var User $user */
             foreach ($entities as $user) {
 
+                $addressesArr = [];
+
+                /* @var UserAddress $address */
+                foreach ($user->getAddresses() as $address) {
+                    $addressesArrItem = [
+                        'type' => $address->getType(),
+                        'street' => $address->getStreet(),
+                        'apartment' => $address->getApartment(),
+                    ];
+                    array_push($addressesArr, $addressesArrItem);
+                }
+
                 $params = [
                     'firstname' => $user->getFirstname(),
                     'lastname' => $user->getLastname(),
+                    'updated' => $user->getUpdated(),
+                    'addresses' => $addressesArr,
                     'email' => $user->getEmail(),
                     'contact_source' => $settingContactSource ?? "Amulen Web",
                 ];
-
-                $output->writeln($params);
 
                 $user->setFlowrSynced(false);
                 $res = $client->request('POST', self::FLOWR_URL_ACCOUNT_CREATE, array(
@@ -113,31 +125,6 @@ class SyncUsersCommand extends AmulenCommand
                         }
                         if (isset($flowrUser['code'])) {
                             $user->setFlowrCode($flowrUser['code']);
-                        }
-                        if (isset($flowrUser['addresses'])) {
-
-                            foreach ($flowrUser['addresses'] as $addressArr) {
-                                $address = $user->getAddress($addressArr['street']);
-                                print_r($addressArr);
-                                if (!$address) {
-                                    $address = new UserAddress();
-                                }
-                                $address->setType($addressArr['type']);
-                                $address->setStreet($addressArr['street']);
-                                $address->setApartment($addressArr['apartment']);
-
-                                if ($addressArr['country']) {
-                                    $address->setCountry($addressArr['country']['name']);
-                                }
-
-                                $address->setState($addressArr['state']);
-                                $address->setPostalCode($addressArr['postal_code']);
-                                $address->setLatitude($addressArr['latitude']);
-                                $address->setLongitude($addressArr['longitude']);
-                                $address->setUser($user);
-                                $this->getEM()->persist($address);
-                            }
-
                         }
                     }
                 } else {
