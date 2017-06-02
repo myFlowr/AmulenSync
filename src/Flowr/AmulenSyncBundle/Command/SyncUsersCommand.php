@@ -92,7 +92,7 @@ class SyncUsersCommand extends AmulenCommand
                 $params = [
                     'firstname' => $user->getFirstname(),
                     'lastname' => $user->getLastname(),
-                    'updated' => $user->getUpdated(),
+                    'updated' => $user->getUpdated()->format('c'),
                     'addresses' => $addressesArr,
                     'email' => $user->getEmail(),
                     'contact_source' => $settingContactSource ?? "Amulen Web",
