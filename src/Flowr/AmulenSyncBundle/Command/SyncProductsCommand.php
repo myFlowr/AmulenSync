@@ -69,10 +69,10 @@ class SyncProductsCommand extends AmulenCommand
             } else {
                 $productCateogory = new Category();
                 $productCateogory->setName($categoryArr['name']);
-                $productCateogories = $this->productCategoryRepo->findBy([],['position' => 'desc']);
+                $productCateogories = $this->productCategoryRepo->findBy([], ['position' => 'desc']);
                 $position = 0;
                 if (sizeof($productCateogories) > 0) {
-                    $productCateogory->setPosition($productCateogories[0]->getPosition()+1);
+                    $productCateogory->setPosition($productCateogories[0]->getPosition() + 1);
                 }
                 $parent = $this->productCategoryRepo->findOneBy(['position' => 0]);
                 $productCateogory->setParent($parent);
@@ -305,7 +305,7 @@ class SyncProductsCommand extends AmulenCommand
                 'headers' => array(
                     'Authorization' => "Bearer $token",
                 ),
-                'query' => "pricelist=" . $this->settings['priceListId'],
+                'query' => "includeDisabled=1&pricelist=" . $this->settings['priceListId'],
             ));
 
             $code = $res->getStatusCode();
@@ -359,6 +359,24 @@ class SyncProductsCommand extends AmulenCommand
 
                     if (isset($productArr['sale_price'])) {
                         $product->setPrice($productArr['sale_price']);
+                    }
+
+                    if (isset($productArr['featured'])) {
+                        $output->writeln("Is featured: " . $productArr['featured']);
+                        if ($productArr['featured']) {
+                            $product->setFeatured(true);
+                        } else {
+                            $product->setFeatured(false);
+                        }
+                    }
+
+                    if (isset($productArr['enabled'])) {
+                        $output->writeln("Is enabled: " . $productArr['enabled']);
+                        if ($productArr['enabled']) {
+                            $product->setEnabled(true);
+                        } else {
+                            $product->setEnabled(false);
+                        }
                     }
 
 
