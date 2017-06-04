@@ -258,6 +258,7 @@ class SyncProductsCommand extends AmulenCommand
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return mixed
+     * @throws \Exception
      */
     function task(InputInterface $input, OutputInterface $output)
     {
@@ -267,6 +268,12 @@ class SyncProductsCommand extends AmulenCommand
         $this->productCategoryRepo = $this->getEM()->getRepository(Category::class);
 
         $token = null;
+
+        /* @var \DateTime $lastRun */
+        $lastRun = $this->getJob()->getLastSuccessfulRun();
+
+        $output->writeln(" - Last run was on " . ($lastRun ? $lastRun->format('Y-m-d H:i:s') : 'never'));
+
 
         $this->settings = [
             'url' => $this->getSettings()->get(Setting::FLOWR_URL),
@@ -300,12 +307,21 @@ class SyncProductsCommand extends AmulenCommand
         }
 
         if ($token) {
+
+            $queryParams = [];
+            $queryParams['includeDisabled'] = 1;
+            $queryParams['pricelist'] = $this->settings['priceListId'];
+
+            if ($lastRun) {
+                $queryParams['since'] = $lastRun->format('Y-m-d H:i:s');
+            }
+
             $res = $client->request('GET', self::FLOWR_URL_PRODUCT_GET, array(
                 'content_type' => "application/x-www-form-urlencoded",
                 'headers' => array(
                     'Authorization' => "Bearer $token",
                 ),
-                'query' => "includeDisabled=1&pricelist=" . $this->settings['priceListId'],
+                'query' => $queryParams,
             ));
 
             $code = $res->getStatusCode();
@@ -315,6 +331,7 @@ class SyncProductsCommand extends AmulenCommand
 
                 $productRepo = $this->getEM()->getRepository(Product::class);
 
+                $output->writeln(" - About to sync " . count($responseArr) . " entities.");
                 foreach ($responseArr as $productArr) {
 
                     $output->write("Product id:");
