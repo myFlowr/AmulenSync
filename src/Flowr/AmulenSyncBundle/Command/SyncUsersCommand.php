@@ -135,17 +135,17 @@ class SyncUsersCommand extends AmulenCommand
                                     $address = new UserAddress();
                                 }
                                 $address->setType($addressArr['type']);
-                                $address->setStreet($addressArr['street']);
-                                $address->setApartment($addressArr['apartment']);
+                                $address->setStreet($addressArr['street']??null);
+                                $address->setApartment($addressArr['apartment']??null);
 
-                                if ($addressArr['country']) {
+                                if (isset($addressArr['country'])) {
                                     $address->setCountry($addressArr['country']['name']);
                                 }
 
-                                $address->setState($addressArr['state']);
-                                $address->setPostalCode($addressArr['postal_code']);
-                                $address->setLatitude($addressArr['latitude']);
-                                $address->setLongitude($addressArr['longitude']);
+                                $address->setState($addressArr['state']??null);
+                                $address->setPostalCode($addressArr['postal_code']??null);
+                                $address->setLatitude($addressArr['latitude']??null);
+                                $address->setLongitude($addressArr['longitude']??null);
                                 $address->setUser($user);
                                 $this->getEM()->persist($address);
                             }
