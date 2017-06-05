@@ -3,6 +3,7 @@
 namespace Flowr\AmulenSyncBundle\Command;
 
 use Amulen\ClassificationBundle\Entity\Category;
+use Amulen\ClassificationBundle\Entity\Tag;
 use Amulen\MediaBundle\Entity\Gallery;
 use Amulen\MediaBundle\Entity\GalleryItem;
 use Amulen\MediaBundle\Entity\Media;
@@ -151,6 +152,48 @@ class SyncProductsCommand extends AmulenCommand
             $product->setFlowrRawMaterials(null);
         }
         return $product;
+    }
+
+    /**
+     * @param Product $product
+     * @param $productArr
+     * @return Product
+     */
+    private function processTags(Product $product, $productArr)
+    {
+        if (isset($productArr['tags'])) {
+
+            foreach ($productArr['tags'] as $tagArr) {
+                if (isset($tagArr['name'])) {
+                    if (!$this->hasTag($product, $tagArr['name'])) {
+
+                        $tag = $this->getEM()->getRepository(Tag::class)->findOneBy([
+                            'name' => $tagArr['name']
+                        ]);
+
+                        if (!$tag) {
+                            $tag = new Tag();
+                            $tag->setName($tagArr['name']);
+                            $this->getEM()->persist($tag);
+                        }
+
+                        $product->addTag($tag);
+                    }
+                }
+            }
+
+        }
+        return $product;
+    }
+
+    private function hasTag(Product $produdct, $name)
+    {
+        foreach ($produdct->getTags() as $tag) {
+            if (strtolower($tag->getName()) == strtolower($name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -372,6 +415,9 @@ class SyncProductsCommand extends AmulenCommand
 
                     $output->writeln("Processing categories...");
                     $product = $this->processCategories($product, $productArr);
+
+                    $output->writeln("Processing tags...");
+                    $product = $this->processTags($product, $productArr);
 
 
                     if (isset($productArr['sale_price'])) {
