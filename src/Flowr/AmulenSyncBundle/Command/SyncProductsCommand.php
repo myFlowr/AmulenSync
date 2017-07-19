@@ -356,7 +356,7 @@ class SyncProductsCommand extends AmulenCommand
             $queryParams['pricelist'] = $this->settings['priceListId'];
 
             if ($lastRun) {
-                $queryParams['since'] = $lastRun->format('Y-m-d H:i:s');
+                //$queryParams['since'] = $lastRun->format('Y-m-d H:i:s');
             }
 
             $res = $client->request('GET', self::FLOWR_URL_PRODUCT_GET, array(
