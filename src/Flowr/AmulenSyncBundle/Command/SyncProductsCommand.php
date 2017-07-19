@@ -14,10 +14,14 @@ use Amulen\ShopBundle\Entity\ProductItemField;
 use Amulen\ShopBundle\Entity\ProductItemFieldData;
 use Flowcode\DashboardBundle\Command\AmulenCommand;
 use Flowcode\DashboardBundle\Entity\Job;
+use Flowcode\ShopBundle\Entity\Warehouse;
+use Flowcode\ShopBundle\Entity\WarehouseProduct;
 use Flower\ModelBundle\Entity\Project\ProjectIteration;
 use Flowr\AmulenSyncBundle\Entity\Setting;
 use Flowr\AmulenSyncBundle\Service\SettingService;
+use Gedmo\Sluggable\Util\Urlizer;
 use GuzzleHttp\Client;
+use Intervention\Image\Image;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -186,6 +190,64 @@ class SyncProductsCommand extends AmulenCommand
         return $product;
     }
 
+    /**
+     * @param Product $product
+     * @param $productArr
+     * @return Product
+     */
+    private function processWarehouses(Product $product, $productArr)
+    {
+        if (isset($productArr['warehouses_stock'])) {
+
+            foreach ($productArr['warehouses_stock'] as $warehouseStockArr) {
+
+                $warehouseArr = $warehouseStockArr['warehouse'];
+                $wareHouse = $this->getEM()->getRepository(Warehouse::class)->findOneBy([
+                    'name' => $warehouseArr['name'],
+                ]);
+
+                $wareHouseProduct = null;
+                if (!$wareHouse) {
+
+                    $wareHouse = new Warehouse();
+                    $wareHouse->setName($warehouseArr['name']);
+                    if (isset($warehouseArr['address'])) {
+                        $wareHouse->setAddress($warehouseArr['address']);
+                    }
+                    if (isset($warehouseArr['lat'])) {
+                        $wareHouse->setLat($warehouseArr['lat']);
+                    }
+                    if (isset($warehouseArr['lng'])) {
+                        $wareHouse->setLng($warehouseArr['lng']);
+                    }
+                    if (isset($warehouseArr['phone'])) {
+                        $wareHouse->setPhone($warehouseArr['phone']);
+                    }
+
+                    $this->getEM()->persist($wareHouse);
+                    $this->getEM()->flush();
+
+                }
+
+                $wareHouseProduct = $this->getEM()->getRepository(WarehouseProduct::class)->findOneBy([
+                    'product' => $product->getId(),
+                    'warehouse' => $warehouseStockArr['warehouse']['id'],
+                ]);
+
+                if (!$wareHouseProduct) {
+                    $wareHouseProduct = new WarehouseProduct();
+                    $wareHouseProduct->setProduct($product);
+                    $wareHouseProduct->setWarehouse($wareHouse);
+                    $this->getEM()->persist($wareHouseProduct);
+                }
+
+                $wareHouseProduct->setStock($warehouseStockArr['stock']);
+            }
+
+        }
+        return $product;
+    }
+
     private function hasTag(Product $produdct, $name)
     {
         foreach ($produdct->getTags() as $tag) {
@@ -194,6 +256,23 @@ class SyncProductsCommand extends AmulenCommand
             }
         }
         return false;
+    }
+
+    private function getImageName($imageName, $imageUrl)
+    {
+        $basePath = $this->settings['url'];
+        $completePath = $basePath . $imageUrl;
+
+        $content = file_get_contents($completePath);
+
+        $baseDir = $this->getContainer()->getParameter('uploads_base_dir');
+        $productsDir = "/uploads" . $this->getContainer()->getParameter('uploads_product_dir');
+
+        $imageFileName = $productsDir . Urlizer::transliterate($imageName) . ".jpg";
+        $imageFilePath = $baseDir . $imageFileName;
+
+        file_put_contents($imageFilePath, $content);
+        return $imageFileName;
     }
 
     /**
@@ -224,9 +303,8 @@ class SyncProductsCommand extends AmulenCommand
                 $media->setName($productArr['image']);
                 $media->setMediaType($imageMediaType);
 
-                $basePath = $this->settings['url'];
-                $completePath = $basePath . $productArr['image'];
-                $media->setPath($completePath);
+                $imageFileName = $this->getImageName($product->getName(), $productArr['image']);
+                $media->setPath($imageFileName);
 
                 $galleryItem = new GalleryItem();
                 $galleryItem->setMedia($media);
@@ -258,7 +336,9 @@ class SyncProductsCommand extends AmulenCommand
                     $media = new Media();
                     $media->setName($productArr['image']);
                     $media->setMediaType($imageMediaType);
-                    $media->setPath($completePath);
+
+                    $imageFileName = $this->getImageName($product->getName(), $productArr['image']);
+                    $media->setPath($imageFileName);
                     $this->getEM()->persist($media);
 
 
@@ -404,20 +484,23 @@ class SyncProductsCommand extends AmulenCommand
                         $product->setDescription($productArr['description']);
                     }
 
-                    $output->writeln("Processing images...");
+                    $output->writeln("Processing images . . .");
                     $product = $this->processImages($product, $productArr);
 
-                    $output->writeln("Processing raw materials...");
+                    $output->writeln("Processing raw materials . . .");
                     $product = $this->processRawMaterials($product, $productArr);
 
-                    $output->writeln("Processing custom fields...");
+                    $output->writeln("Processing custom fields . . .");
                     $product = $this->processCustomFields($product, $productArr);
 
-                    $output->writeln("Processing categories...");
+                    $output->writeln("Processing categories . . .");
                     $product = $this->processCategories($product, $productArr);
 
-                    $output->writeln("Processing tags...");
+                    $output->writeln("Processing tags . . .");
                     $product = $this->processTags($product, $productArr);
+
+                    $output->writeln("Processing warehouses . . .");
+                    $product = $this->processWarehouses($product, $productArr);
 
 
                     if (isset($productArr['sale_price'])) {
