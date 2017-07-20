@@ -55,6 +55,47 @@ class SyncProductsCommand extends AmulenCommand
             ->setDescription('Syncronize products with Flowr');
     }
 
+    private function processStandardFields(Product $product, $productArr)
+    {
+
+        $product->setName($productArr['name']);
+
+        if (isset($productArr['description'])) {
+            $product->setDescription($productArr['description']);
+        }
+
+        if (isset($productArr['sale_price'])) {
+            $product->setPrice($productArr['sale_price']);
+        }
+
+        if (isset($productArr['manual_pack_pricing'])) {
+            if ($productArr['manual_pack_pricing']) {
+                $product->setManualPackPricing(true);
+            } else {
+                $product->setManualPackPricing(false);
+            }
+        }
+
+        if (isset($productArr['featured'])) {
+            if ($productArr['featured']) {
+                $product->setFeatured(true);
+            } else {
+                $product->setFeatured(false);
+            }
+        }
+
+        if (isset($productArr['enabled'])) {
+            if ($productArr['enabled']) {
+                $product->setEnabled(true);
+            } else {
+                $product->setEnabled(false);
+            }
+        }
+
+        return $product;
+
+    }
+
 
     /**
      * @param Product $product
@@ -245,6 +286,37 @@ class SyncProductsCommand extends AmulenCommand
             }
 
         }
+
+        // Default warehouse.
+        if (isset($productArr['warehouse'])) {
+            $warehouseArr = $productArr['warehouse'];
+            $wareHouse = $this->getEM()->getRepository(Warehouse::class)->findOneBy([
+                'name' => $warehouseArr['name'],
+            ]);
+            if (!$wareHouse) {
+
+                $wareHouse = new Warehouse();
+                $wareHouse->setName($warehouseArr['name']);
+                if (isset($warehouseArr['address'])) {
+                    $wareHouse->setAddress($warehouseArr['address']);
+                }
+                if (isset($warehouseArr['lat'])) {
+                    $wareHouse->setLat($warehouseArr['lat']);
+                }
+                if (isset($warehouseArr['lng'])) {
+                    $wareHouse->setLng($warehouseArr['lng']);
+                }
+                if (isset($warehouseArr['phone'])) {
+                    $wareHouse->setPhone($warehouseArr['phone']);
+                }
+
+                $this->getEM()->persist($wareHouse);
+                $this->getEM()->flush();
+            }
+            $product->setWarehouse($wareHouse);
+
+        }
+
         return $product;
     }
 
@@ -478,11 +550,10 @@ class SyncProductsCommand extends AmulenCommand
                     $product->setFlowrSynced(true);
                     $product->setFlowrSyncEnabled(true);
 
-                    $product->setName($productArr['name']);
 
-                    if (isset($productArr['description'])) {
-                        $product->setDescription($productArr['description']);
-                    }
+
+                    $output->writeln("Processing standard fields . . .");
+                    $product = $this->processStandardFields($product, $productArr);
 
                     $output->writeln("Processing images . . .");
                     $product = $this->processImages($product, $productArr);
@@ -501,29 +572,6 @@ class SyncProductsCommand extends AmulenCommand
 
                     $output->writeln("Processing warehouses . . .");
                     $product = $this->processWarehouses($product, $productArr);
-
-
-                    if (isset($productArr['sale_price'])) {
-                        $product->setPrice($productArr['sale_price']);
-                    }
-
-                    if (isset($productArr['featured'])) {
-                        $output->writeln("Is featured: " . $productArr['featured']);
-                        if ($productArr['featured']) {
-                            $product->setFeatured(true);
-                        } else {
-                            $product->setFeatured(false);
-                        }
-                    }
-
-                    if (isset($productArr['enabled'])) {
-                        $output->writeln("Is enabled: " . $productArr['enabled']);
-                        if ($productArr['enabled']) {
-                            $product->setEnabled(true);
-                        } else {
-                            $product->setEnabled(false);
-                        }
-                    }
 
 
                     /* Track what was synced */
