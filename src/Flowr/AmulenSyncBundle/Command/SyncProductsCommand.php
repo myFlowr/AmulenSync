@@ -37,7 +37,7 @@ class SyncProductsCommand extends AmulenCommand
 {
 
     const FLOWR_URL_LOGIN = "/api/users/login";
-    const FLOWR_URL_PRODUCT_GET = "/api/stock/products/forsale/pricelist";
+    const FLOWR_URL_PRODUCT_GET = "/api/stock/products/forsale";
     const FLOWR_ACCOUNT_ALREADY_CREATED = "Account already synced";
     const COMMAND_NAME = "amulen:flowr:syncproducts";
 
